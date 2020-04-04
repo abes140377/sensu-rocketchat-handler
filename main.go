@@ -7,6 +7,7 @@ import (
 	"github.com/sensu-community/sensu-plugin-sdk/sensu"
 	"github.com/sensu-community/sensu-plugin-sdk/templates"
 	corev2 "github.com/sensu/sensu-go/api/core/v2"
+	neturl "net/url"
 	"os"
 	"strings"
 )
@@ -24,10 +25,12 @@ const (
 	url					= "url"
 	channel             = "channel"
 	username            = "username"
+	password            = "password"
 	descriptionTemplate = "description-template"
 
-	defaultChannel  = "general"
-	defaultUsername = "servicep"
+	defaultUrl  = "https://open.rocket.chat/"
+	defaultChannel  = "sandbox"
+	defaultUsername = "sensu"
 	defaultTemplate = "{{ .Check.Output }}"
 )
 
@@ -46,7 +49,8 @@ var (
 			Env:       "ROCKETCHAT_URL",
 			Argument:  url,
 			Shorthand: "w",
-			Usage:     "The webhook url to send messages to",
+			Default:   defaultUrl,
+			Usage:     "The Rocketchat Server URL to send messages to",
 			Value:     &config.rocketchatUrl,
 		},
 		{
@@ -66,6 +70,14 @@ var (
 			Default:   defaultUsername,
 			Usage:     "The username that messages will be sent as",
 			Value:     &config.rocketchatUsername,
+		},
+		{
+			Path:      password,
+			Env:       "ROCKETCHAT_PASSWORD",
+			Argument:  password,
+			Shorthand: "p",
+			Usage:     "The password of the user",
+			Value:     &config.rocketchatPassword,
 		},
 		{
 			Path:      descriptionTemplate,
@@ -94,6 +106,9 @@ func checkArgs(_ *corev2.Event) error {
 	}
 	if username := os.Getenv("ROCKETCHAT_USERNAME"); username != "" && config.rocketchatUsername == defaultUsername {
 		config.rocketchatUsername = username
+	}
+	if password := os.Getenv("ROCKETCHAT_PASSWORD"); password != "" {
+		config.rocketchatPassword = password
 	}
 
 	if len(config.rocketchatUrl) == 0 {
@@ -155,19 +170,31 @@ func messageStatus(event *corev2.Event) string {
 }
 
 func sendMessage(event *corev2.Event) error {
-	client := rest.Client{Protocol: "http", Host: "chat.dzbw.de", Port: "80"}
-	credentials := &models.UserCredentials{Name: "servicep", Email: "servicep@dzbw.de", Password: "servicep"}
+	u, parseErr := neturl.Parse(config.rocketchatUrl)
 
-	client.Login(credentials)
+	if parseErr != nil {
+		fmt.Errorf("Error parsing url : %s", config.rocketchatUrl)
+	}
 
-	general := &models.Channel{ID: "GENERAL", Name: "general"}
+	client := rest.Client{Protocol: u.Scheme, Host: u.Host, Port: u.Port()}
+	// credentials := &models.UserCredentials{Name: config.rocketchatUsername, Email: "servicep@dzbw.de", Password: "servicep"}
+	credentials := &models.UserCredentials{Name: config.rocketchatUsername, Password: config.rocketchatPassword}
+
+	loginErr := client.Login(credentials)
+
+	if loginErr != nil {
+		fmt.Errorf("Error login with username : %s", config.rocketchatUsername)
+	}
+
+	// channel := &models.Channel{ID: "GENERAL", Name: "channel"}
+	channel := &models.Channel{Name: config.rocketchatChannel}
 
 	description, errEvalTemplate := templates.EvalTemplate("description", config.rocketchatDescriptionTemplate, event)
 	if errEvalTemplate != nil {
 		fmt.Errorf("Error processing template: %s", errEvalTemplate)
 	}
 
-	errSend := client.Send(general, description)
+	errSend := client.Send(channel, description)
 
 	return errSend
 }
