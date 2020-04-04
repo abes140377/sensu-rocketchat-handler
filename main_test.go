@@ -3,10 +3,6 @@ package main
 import (
 	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 )
 
@@ -84,24 +80,24 @@ func TestMessageStatus(t *testing.T) {
 	assert.Equal("Critical", status)
 }
 
-func TestSendMessage(t *testing.T) {
-	assert := assert.New(t)
-	event := corev2.FixtureEvent("entity1", "check1")
-
-	var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := ioutil.ReadAll(r.Body)
-		expectedBody := `{"channel":"#test","attachments":[{"color":"good","fallback":"RESOLVED - entity1/check1:","title":"Description","text":"","fields":[{"title":"Status","value":"Resolved","short":false},{"title":"Entity","value":"entity1","short":true},{"title":"Check","value":"check1","short":true}]}]}`
-		assert.Equal(expectedBody, string(body))
-		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte(`{"ok": true}`))
-		require.NoError(t, err)
-	}))
-
-	config.rocketchatUrl = apiStub.URL
-	config.rocketchatChannel = "#test"
-	err := sendMessage(event)
-	assert.NoError(err)
-}
+//func TestSendMessage(t *testing.T) {
+//	assert := assert.New(t)
+//	event := corev2.FixtureEvent("entity1", "check1")
+//
+//	var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//		body, _ := ioutil.ReadAll(r.Body)
+//		expectedBody := `{"channel":"#test","attachments":[{"color":"good","fallback":"RESOLVED - entity1/check1:","title":"Description","text":"","fields":[{"title":"Status","value":"Resolved","short":false},{"title":"Entity","value":"entity1","short":true},{"title":"Check","value":"check1","short":true}]}]}`
+//		assert.Equal(expectedBody, string(body))
+//		w.WriteHeader(http.StatusOK)
+//		_, err := w.Write([]byte(`{"ok": true}`))
+//		require.NoError(t, err)
+//	}))
+//
+//	config.rocketchatUrl = apiStub.URL
+//	config.rocketchatChannel = "#test"
+//	err := sendMessage(event)
+//	assert.NoError(err)
+//}
 
 //func TestMain(t *testing.T) {
 //	assert := assert.New(t)
