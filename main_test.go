@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/RocketChat/Rocket.Chat.Go.SDK/rest"
 	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -136,12 +135,12 @@ func TestSendMessage(t *testing.T) {
 //	assert.True(requestReceived)
 //}
 
-func TestRocket_GetServerInfo(t *testing.T) {
-	rocket := rest.Client{Protocol: "http", Host: "chat.dzbw.de", Port: "80"}
-
-	info, err := rocket.GetServerInfo()
-
-	assert.Nil(t, err)
-	assert.NotNil(t, info)
-	assert.NotEmpty(t, info.Version)
-}
+//func TestRocket_GetServerInfo(t *testing.T) {
+//	rocket := rest.Client{Protocol: "http", Host: "chat.dzbw.de", Port: "80"}
+//
+//	info, err := rocket.GetServerInfo()
+//
+//	assert.Nil(t, err)
+//	assert.NotNil(t, info)
+//	assert.NotEmpty(t, info.Version)
+//}
