@@ -1,0 +1,18 @@
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: helloworld
+  namespace: default
+  labels:
+    foo: bar
+  annotations:
+    abes140377/plugins/rocketchat/config/channel: "general"
+spec:
+  command: echo "Hello {{ .system.os }} world!" && exit 1
+  publish: false
+  interval: 10
+  handlers:
+    - rocketchat
+  subscriptions:
+    - development
