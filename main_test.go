@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/RocketChat/Rocket.Chat.Go.SDK/rest"
 	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -81,54 +80,20 @@ func TestMessageStatus(t *testing.T) {
 	assert.Equal("Critical", status)
 }
 
-//func TestSendMessage(t *testing.T) {
-//	assert := assert.New(t)
-//	event := corev2.FixtureEvent("entity1", "check1")
-//
-//	var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		body, _ := ioutil.ReadAll(r.Body)
-//		expectedBody := `{"channel":"#test","attachments":[{"color":"good","fallback":"RESOLVED - entity1/check1:","title":"Description","text":"","fields":[{"title":"Status","value":"Resolved","short":false},{"title":"Entity","value":"entity1","short":true},{"title":"Check","value":"check1","short":true}]}]}`
-//		assert.Equal(expectedBody, string(body))
-//		w.WriteHeader(http.StatusOK)
-//		_, err := w.Write([]byte(`{"ok": true}`))
-//		require.NoError(t, err)
-//	}))
-//
-//	config.rocketchatUrl = apiStub.URL
-//	config.rocketchatUsername = "sensu"
-//	config.rocketchatPassword = "sensu"
-//	config.rocketchatChannel = "sandbox"
-//	config.rocketchatTemplate = defaultTemplate
-//
-//	err := sendMessage(event)
-//	assert.NoError(err)
-//}
-
 //func TestSendRealMessage(t *testing.T) {
 //	assert := assert.New(t)
 //	event := corev2.FixtureEvent("entity1", "check1")
 //
-//	//var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//	//	body, _ := ioutil.ReadAll(r.Body)
-//	//	expectedBody := `{"channel":"#test","attachments":[{"color":"good","fallback":"RESOLVED - entity1/check1:","title":"Description","text":"","fields":[{"title":"Status","value":"Resolved","short":false},{"title":"Entity","value":"entity1","short":true},{"title":"Check","value":"check1","short":true}]}]}`
-//	//	assert.Equal(expectedBody, string(body))
-//	//	w.WriteHeader(http.StatusOK)
-//	//	_, err := w.Write([]byte(`{"ok": true}`))
-//	//	require.NoError(t, err)
-//	//}))
-//
-//	config.rocketchatUrl = ...
-//	config.rocketchatUsername = ...
-//	config.rocketchatPassword = ...
-//	config.rocketchatChannel = ...
-//
-//	config.rocketchatTemplate = defaultTemplate
+//	config.rocketchatUrl = "http://chat.dzbw.de"
+//	config.rocketchatUsername = "servicep"
+//	config.rocketchatPassword = "servicep"
+//	config.rocketchatChannel = "monitoring"
 //
 //	err := sendMessage(event)
 //
 //	assert.NoError(err)
 //}
-
+//
 //func TestMainMethod(t *testing.T) {
 //	assert := assert.New(t)
 //	file, _ := ioutil.TempFile(os.TempDir(), "sensu-handler-rocketchat-")
@@ -146,27 +111,10 @@ func TestMessageStatus(t *testing.T) {
 //	os.Stdin = file
 //	requestReceived := false
 //
-//	var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		requestReceived = true
-//		w.WriteHeader(http.StatusOK)
-//		_, err := w.Write([]byte(`{"ok": true}`))
-//		require.NoError(t, err)
-//	}))
-//
 //	oldArgs := os.Args
-//	os.Args = []string{"rocketchat", "-w", apiStub.URL}
+//	os.Args = []string{"sensu-rocketchat-handler", "-w", "http://chat.dzbw.de", "-c", "monitoring", "-u", "servicep", "-p", "servicep"}
 //	defer func() { os.Args = oldArgs }()
 //
 //	main()
 //	assert.True(requestReceived)
 //}
-
-func TestRocket_GetServerInfo(t *testing.T) {
-	rocket := rest.Client{Protocol: "https", Host: "open.rocket.chat", Port: "443"}
-
-	info, err := rocket.GetServerInfo()
-
-	assert.Nil(t, err)
-	assert.NotNil(t, info)
-	assert.NotEmpty(t, info.Version)
-}
