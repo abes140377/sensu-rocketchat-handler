@@ -14,11 +14,11 @@ import (
 
 type HandlerConfig struct {
 	sensu.PluginConfig
-	rocketchatUrl       			string
-	rocketchatChannel   			string
-	rocketchatUsername  			string
-	rocketchatPassword				string
-	rocketchatDescriptionTemplate 	string
+	rocketchatUrl       string
+	rocketchatChannel   string
+	rocketchatUsername  string
+	rocketchatPassword	string
+	rocketchatTemplate	string
 }
 
 const (
@@ -26,7 +26,7 @@ const (
 	channel             = "channel"
 	username            = "username"
 	password            = "password"
-	descriptionTemplate = "description-template"
+	template 			= "template"
 
 	defaultUrl  = "https://open.rocket.chat/"
 	defaultChannel  = "sandbox"
@@ -80,13 +80,13 @@ var (
 			Value:     &config.rocketchatPassword,
 		},
 		{
-			Path:      descriptionTemplate,
-			Env:       "ROCKETCHAT_DESCRIPTION_TEMPLATE",
-			Argument:  descriptionTemplate,
+			Path:      template,
+			Env:       "ROCKETCHAT_TEMPLATE",
+			Argument:  template,
 			Shorthand: "t",
 			Default:   defaultTemplate,
 			Usage:     "The Rocketchat notification output template, in Golang text/template format",
-			Value:     &config.rocketchatDescriptionTemplate,
+			Value:     &config.rocketchatTemplate,
 		},
 	}
 )
@@ -127,6 +127,10 @@ func formattedEventAction(event *corev2.Event) string {
 	}
 }
 
+func chomp(s string) string {
+	return strings.Trim(strings.Trim(strings.Trim(s, "\n"), "\r"), "\r\n")
+}
+
 func eventKey(event *corev2.Event) string {
 	return fmt.Sprintf("%s/%s", event.Entity.Name, event.Check.Name)
 }
@@ -137,10 +141,6 @@ func eventSummary(event *corev2.Event, maxLength int) string {
 		output = output[0:maxLength] + "..."
 	}
 	return fmt.Sprintf("%s:%s", eventKey(event), output)
-}
-
-func chomp(s string) string {
-	return strings.Trim(strings.Trim(strings.Trim(s, "\n"), "\r"), "\r\n")
 }
 
 func formattedMessage(event *corev2.Event) string {
@@ -169,32 +169,76 @@ func messageStatus(event *corev2.Event) string {
 	}
 }
 
+func messageAttachment(event *corev2.Event) models.Attachment {
+	description, err := templates.EvalTemplate("description", config.rocketchatTemplate, event)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error processing template: %s", err)
+	}
+
+	attachmentFields := []models.AttachmentField{
+		{
+			Title: "Status",
+			Value: messageStatus(event),
+			Short: false,
+		},
+		{
+			Title: "Entity",
+			Value: event.Entity.Name,
+			Short: true,
+		},
+		{
+			Title: "Check",
+			Value: event.Check.Name,
+			Short: true,
+		},
+	}
+
+	attachment := models.Attachment{
+		Title:  "Description",
+		Text:   description,
+		Color:  messageColor(event),
+		Fields: attachmentFields,
+	}
+
+	return attachment
+}
+
 func sendMessage(event *corev2.Event) error {
 	u, parseErr := neturl.Parse(config.rocketchatUrl)
 
 	if parseErr != nil {
-		fmt.Errorf("Error parsing url : %s", config.rocketchatUrl)
+		fmt.Fprintf(os.Stderr, "Error parsing url: %s\n", config.rocketchatUrl)
 	}
 
 	client := rest.Client{Protocol: u.Scheme, Host: u.Host, Port: u.Port()}
-	// credentials := &models.UserCredentials{Name: config.rocketchatUsername, Email: "servicep@dzbw.de", Password: "servicep"}
-	credentials := &models.UserCredentials{Name: config.rocketchatUsername, Password: config.rocketchatPassword}
+	credentials := &models.UserCredentials{Email: config.rocketchatUsername, Password: config.rocketchatPassword}
 
 	loginErr := client.Login(credentials)
 
 	if loginErr != nil {
-		fmt.Errorf("Error login with username : %s", config.rocketchatUsername)
+		fmt.Fprintf(os.Stderr, "Error login on %s with username : %s / %s\n", config.rocketchatUrl, config.rocketchatUsername, config.rocketchatPassword)
 	}
 
-	// channel := &models.Channel{ID: "GENERAL", Name: "channel"}
-	channel := &models.Channel{Name: config.rocketchatChannel}
+	fmt.Fprintf(os.Stdout, "rocketchatTemplate: %s\n", config.rocketchatTemplate )
 
-	description, errEvalTemplate := templates.EvalTemplate("description", config.rocketchatDescriptionTemplate, event)
+	//out, _ := json.MarshalIndent(event, "", "  ")
+	//fmt.Fprintf(os.Stdout, "event: %s\n", out)
+
+	description, errEvalTemplate := templates.EvalTemplate("description", config.rocketchatTemplate, event)
 	if errEvalTemplate != nil {
-		fmt.Errorf("Error processing template: %s", errEvalTemplate)
+		fmt.Fprintf(os.Stderr, "Error processing template: %s\n", errEvalTemplate)
 	}
 
-	errSend := client.Send(channel, description)
+	fmt.Fprintf(os.Stderr, "check_output: %s\n", description)
+
+	postMessage := &models.PostMessage {
+		Channel: config.rocketchatChannel,
+		Alias: "Sensu Monitoring",
+		Text: description,
+		Attachments: []models.Attachment{messageAttachment(event)},
+	}
+
+	_, errSend := client.PostMessage(postMessage)
 
 	return errSend
 }
