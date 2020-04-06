@@ -30,12 +30,12 @@ Available Commands:
   version     Print the version number of this plugin
 
 Flags:
-  -w, --rocketchat-url string   The url of the Rocket.Chat server to send messages to (default "https://open.rocket.chat/")
-  -c, --channel string          The channel to post messages to (default "sandbox")
-  -i, --icon-url string         A URL to an image to use as the user avatar (default "https://www.sensu.io/img/sensu-logo.png")
-  -u, --username string         The username that messages will be sent as (default "sensu")
-  -t, --descriptionTemplate     The Rocketchat notification output template, in Golang text/template format
-  -h, --help                    help for sensu-rocketchat-handler
+  -w, --url      string     The url of the Rocket.Chat server to send messages to (default "https://open.rocket.chat/")
+  -c, --channel  string     The channel to post messages to (default "sandbox")
+  -u, --username string     The username that messages will be sent as (default "sensu")
+  -p, --password string     The password of the user
+  -t, --template string     The Rocketchat notification output template, in Golang text/template format
+  -h, --help                help for sensu-rocketchat-handler
 ```
 
 ## Configuration
@@ -62,13 +62,12 @@ metadata:
   name: rocketchat
 spec:
   type: pipe
-  command: sensu-rocketchat-handler -channel 'sandbox' --username 'sensu'
+  command: sensu-rocketchat-handler -w 'http://chat.example.com' -c 'monitoring' -u 'sensu'
+  env_vars:
+  - "ROCKETCHAT_PASSWORD=sensu"
   filters:
   - is_incident
   runtime_assets:
-  - sensu/sensu-rocketchat-handler
-  secrets:
-  - name: ROCKETCHAT_PASSWORD
-    secret: rocketchat-password
+  - abes140377/sensu-rocketchat-handler
   timeout: 10
 ```

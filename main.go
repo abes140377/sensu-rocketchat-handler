@@ -110,6 +110,9 @@ func checkArgs(_ *corev2.Event) error {
 	if password := os.Getenv("ROCKETCHAT_PASSWORD"); password != "" {
 		config.rocketchatPassword = password
 	}
+	if template := os.Getenv("ROCKETCHAT_TEMPLATE"); template != "" && config.rocketchatTemplate == defaultTemplate {
+		config.rocketchatTemplate = template
+	}
 
 	if len(config.rocketchatUrl) == 0 {
 		return fmt.Errorf("--%s or ROCKETCHAT_URL environment variable is required", url)
