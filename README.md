@@ -62,7 +62,7 @@ metadata:
   name: rocketchat
 spec:
   type: pipe
-  command: sensu-rocketchat-handler -w 'http://chat.example.com' -c 'monitoring' -u 'sensu'
+  command: sensu-rocketchat-handler -w 'http://chat.example.com' -c 'monitoring' -u 'sensu' -p 'sensu'
   env_vars:
   - "ROCKETCHAT_PASSWORD=sensu"
   filters:
